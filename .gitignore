@@ -1,0 +1,25 @@
+# Contest-generated temporary and build artifacts
+workspaces/**/_tmp/
+workspaces/**/__pycache__/
+workspaces/**/*.pyc
+workspaces/**/code/_vendor/
+workspaces/**/code/_cache/
+workspaces/**/paper/*.aux
+workspaces/**/paper/*.log
+workspaces/**/paper/*.out
+workspaces/**/paper/*.toc
+workspaces/**/paper/*.fls
+workspaces/**/paper/*.fdb_latexmk
+workspaces/**/paper/*.synctex.gz
+workspaces/**/paper/*.xdv
+workspaces/**/paper/missfont.log
+
+# Local editor and environment files
+.idea/
+.vscode/
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# Scratch extraction area (PDF-to-text dumps, page crops)
+tmp/

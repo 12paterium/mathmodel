@@ -1,0 +1,51 @@
+\vspace{1.1em}
+
+\begin{lstlisting}[language=Python]
+import numpy as np
+from scipy.optimize import linprog
+
+DT, ETA = 1 / 6, 0.9
+SOC_MIN, SOC_MAX = 1200.0, 10800.0
+FLOW_MAX = 5000 * DT
+
+def causal_forecast(values, day):
+    base = [
+        values[day - 1],
+        values[max(0, day - 7):day].mean(axis=0),
+        values[np.arange(day - 7, -1, -7)[:4]].mean(axis=0),
+    ]
+    valid = np.arange(max(1, day - 14), day)
+    mae = historical_one_step_mae(values, valid)
+    weight = 1 / np.maximum(mae, 1e-9)
+    weight /= weight.sum()
+    return np.tensordot(weight, base, axes=(0, 0))
+
+def execute_interval(x, load, pv, soc):
+    surplus = x + pv - load
+    if surplus >= 0:
+        charge = min(surplus, FLOW_MAX, (SOC_MAX - soc) / ETA)
+        discharge, emergency = 0.0, 0.0
+        curtail = surplus - charge
+    else:
+        charge, curtail = 0.0, 0.0
+        discharge = min(-surplus, FLOW_MAX, (soc - SOC_MIN) * ETA)
+        emergency = -surplus - discharge
+    soc += ETA * charge - discharge / ETA
+    return charge, discharge, emergency, curtail, soc
+
+def rolling_day(day, releases=(0, 6, 12, 18)):
+    load_hat = causal_forecast(load_history, day)
+    pv_hat = released_pv_forecast(day, 0)
+    plan = solve_linear_dispatch(load_hat, pv_hat, price_hat, start_soc)
+    active = plan.purchase.copy()
+    for hour in releases[1:]:
+        execute_committed_prefix(active, hour)
+        # Executed intervals are frozen; only the suffix is optimized.
+        new = solve_adjustment_lp(
+            active[hour * 6:],
+            released_pv_forecast(day, hour),
+            observed_information_up_to(day, hour),
+        )
+        active[hour * 6:] = new.purchase
+    return execute_committed_suffix(active)
+\end{lstlisting}

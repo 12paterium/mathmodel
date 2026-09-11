@@ -1,0 +1,8 @@
+﻿figure,data,purpose
+p1_dispatch.pdf,p1_dispatch_data.csv,问题1调度构成
+p1_soc_price.pdf,p1_dispatch_data.csv,SOC与分时电价关系
+p2_forecast_dispatch.pdf,p2_forecast_dispatch_data.csv,问题2预测与计划对比
+p2_emergency_heatmap.pdf,p2_emergency_heatmap_data.csv,全年紧急购电分布
+p3_update_ablation.pdf,p3_update_ablation_data.csv,更新时刻消融
+scenario_cost_comparison.pdf,scenario_cost_comparison_data.csv,四种主场景成本比较
+p4_price_heatmap.pdf,p4_price_heatmap_data.csv,波动电价全年结构

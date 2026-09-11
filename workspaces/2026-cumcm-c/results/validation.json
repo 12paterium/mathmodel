@@ -1,0 +1,112 @@
+{
+  "problem1": {
+    "balance": 2.2737367544323206e-13,
+    "state": 9.094947017729282e-13,
+    "end_soc": 0.0,
+    "flow": 0.0
+  },
+  "problem2": {
+    "balance": 2.2737367544323206e-13,
+    "state": 0.0,
+    "continuity": 0.0,
+    "soc_lower": 0.0,
+    "soc_upper": 0.0,
+    "flow": 0.0,
+    "simultaneous_charge_discharge": 0.0
+  },
+  "problem3": {
+    "balance": 2.2737367544323206e-13,
+    "state": 0.0,
+    "continuity": 0.0,
+    "soc_lower": 0.0,
+    "soc_upper": 0.0,
+    "flow": 0.0,
+    "simultaneous_charge_discharge": 0.0
+  },
+  "problem4_2": {
+    "balance": 2.2737367544323206e-13,
+    "state": 0.0,
+    "continuity": 0.0,
+    "soc_lower": 0.0,
+    "soc_upper": 0.0,
+    "flow": 0.0,
+    "simultaneous_charge_discharge": 0.0
+  },
+  "problem4_3": {
+    "balance": 2.2737367544323206e-13,
+    "state": 0.0,
+    "continuity": 0.0,
+    "soc_lower": 0.0,
+    "soc_upper": 0.0,
+    "flow": 0.0,
+    "simultaneous_charge_discharge": 0.0
+  },
+  "problem4_2_perfect_price": {
+    "balance": 2.2737367544323206e-13,
+    "state": 0.0,
+    "continuity": 0.0,
+    "soc_lower": 0.0,
+    "soc_upper": 0.0,
+    "flow": 0.0,
+    "simultaneous_charge_discharge": 0.0
+  },
+  "workbooks": {
+    "result1.xlsx": {
+      "sheets": [
+        "计划购电量",
+        "充放电量"
+      ],
+      "size": [
+        145,
+        2
+      ]
+    },
+    "result2.xlsx": {
+      "sheets": [
+        "计划购电量",
+        "充放电量",
+        "紧急购电量"
+      ],
+      "size": [
+        335,
+        147
+      ]
+    },
+    "result3.xlsx": {
+      "sheets": [
+        "计划购电量",
+        "调整购电量",
+        "充放电量",
+        "紧急购电量"
+      ],
+      "size": [
+        335,
+        147
+      ]
+    },
+    "result4-2.xlsx": {
+      "sheets": [
+        "计划购电量",
+        "充放电量",
+        "紧急购电量"
+      ],
+      "size": [
+        335,
+        147
+      ]
+    },
+    "result4-3.xlsx": {
+      "sheets": [
+        "计划购电量",
+        "调整购电量",
+        "充放电量",
+        "紧急购电量"
+      ],
+      "size": [
+        335,
+        147
+      ]
+    }
+  },
+  "status": "PASS"
+}
