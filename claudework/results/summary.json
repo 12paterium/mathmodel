@@ -1,0 +1,10 @@
+{
+  "problem1_purchase_kwh": 57580.98129629629,
+  "problem1_cost": 33416.530707032776,
+  "problem2_cost": 17026400.248231035,
+  "problem3_cost": 17605581.08062168,
+  "problem3_cost_no_rolling": 17806165.244526073,
+  "problem3_rolling_gain": 200584.16390439495,
+  "problem4_2_cost": 17341287.330654126,
+  "problem4_3_cost": 17827784.42877686
+}

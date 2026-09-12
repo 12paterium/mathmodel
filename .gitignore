@@ -23,3 +23,18 @@ desktop.ini
 
 # Scratch extraction area (PDF-to-text dumps, page crops)
 tmp/
+
+# claudework：独立的 C 题重做工作区
+claudework/.venv/
+claudework/**/__pycache__/
+claudework/**/*.pyc
+claudework/tmp/
+claudework/paper/*.aux
+claudework/paper/*.log
+claudework/paper/*.out
+claudework/paper/*.toc
+claudework/paper/*.fls
+claudework/paper/*.fdb_latexmk
+claudework/paper/*.synctex.gz
+claudework/paper/*.xdv
+claudework/paper/missfont.log

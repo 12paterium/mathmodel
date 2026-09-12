@@ -1,0 +1,161 @@
+% !TEX program = xelatex
+% =============================================================================
+%  全国大学生数学建模竞赛（CUMCM）LaTeX 模板
+%  字体依赖（正文宋体 / 标题黑体 / 强调楷体）：SimSun / SimHei / KaiTi
+%  编译方式：xelatex main.tex（需运行两遍以生成目录）
+% =============================================================================
+\documentclass[fontset=windows, 12pt, a4paper]{ctexart}
+
+\usepackage[a4paper, top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{multirow}
+\usepackage{longtable}
+\usepackage[hidelinks]{hyperref}
+\graphicspath{{../figures/}}
+
+\IfFontExistsTF{Times New Roman}{\setmainfont{Times New Roman}}{}
+\IfFontExistsTF{Consolas}{\setmonofont{Consolas}}{}
+
+\linespread{1.43}
+\setlength{\parindent}{2em}
+
+\ctexset{
+  section/number       = \chinese{section},
+  subsection/number    = \arabic{section}.\arabic{subsection},
+  subsubsection/number = \arabic{section}.\arabic{subsection}.\arabic{subsubsection},
+}
+
+\usepackage{titlesec}
+\titleformat{\section}
+  {\centering\fontsize{17.3pt}{20.8pt}\heiti\bfseries}
+  {\chinese{section}、}{1em}{}
+\titleformat{\subsection}
+  {\fontsize{14.45pt}{17.4pt}\heiti\bfseries}
+  {\arabic{section}.\arabic{subsection}}{1em}{}
+\titleformat{\subsubsection}
+  {\fontsize{12.05pt}{14.5pt}\heiti\bfseries}
+  {\arabic{section}.\arabic{subsection}.\arabic{subsubsection}}{1em}{}
+\titlespacing{\section}       {0pt}{1.25em}{0.82em}
+\titlespacing{\subsection}    {0pt}{1.15em}{0.55em}
+\titlespacing{\subsubsection} {0pt}{1.15em}{0.55em}
+
+\usepackage{tocloft}
+\renewcommand{\cftsecfont}{\heiti\bfseries}
+\renewcommand{\cftsecpagefont}{\heiti\bfseries}
+\renewcommand{\cftsecleader}{\cftdotfill{\cftdotsep}}
+\renewcommand{\cftsubsecleader}{\cftdotfill{\cftdotsep}}
+\renewcommand{\cftsubsubsecleader}{\cftdotfill{\cftdotsep}}
+
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{listings}
+\lstset{
+  basicstyle=\ttfamily\scriptsize,
+  backgroundcolor=\color{black!3},
+  frame=single,
+  framesep=5pt,
+  rulecolor=\color{black!30},
+  framerule=0.7pt,
+  breaklines=true,
+  showstringspaces=false,
+  columns=flexible,
+  keepspaces=true,
+}
+
+\pagestyle{plain}
+
+\newcommand{\papertitle}[1]{%
+  \thispagestyle{empty}%
+  \begin{center}
+    {\fontsize{17.3pt}{22pt}\bfseries #1}
+  \end{center}
+  \vspace{1em}
+}
+\newcommand{\abstractcn}[2]{%
+  \thispagestyle{empty}%
+  \begin{center}{\fontsize{14pt}{17pt}\bfseries 摘要}\end{center}
+  #1\par
+  \vspace{1em}
+  {\heiti\bfseries 关键字：}#2\par
+  \newpage
+}
+\makeatletter
+\newcommand{\tocpage}{%
+  \setcounter{page}{1}%
+  \begin{center}
+    {\fontsize{17.3pt}{20.8pt}\heiti\bfseries 目录}
+  \end{center}
+  \vspace{0.5em}
+  \@starttoc{toc}%
+  \newpage
+}
+\makeatother
+\newcommand{\referencescn}{%
+  \addcontentsline{toc}{section}{参考文献}%
+  \input{references}%
+}
+\newcommand{\appendixcn}{%
+  \section*{附录 A\quad 核心代码}%
+  \addcontentsline{toc}{section}{附录 A\quad 核心代码}%
+  \input{sections/A_code}%
+}
+% 三线表：\threelinetable{标题}{列定义}{表头}{内容}。用 minipage 包住，避免标题与表体被分页拆开
+\newcommand{\threelinetable}[4]{%
+  \begin{center}
+  \begin{minipage}{\linewidth}
+    \centering
+    {\fontsize{10.5pt}{12.6pt}\heiti\bfseries #1}\par
+    \vspace{0.5em}
+    \begin{tabular}{#2}
+      \toprule
+      #3 \\
+      \midrule
+      #4 \\
+      \bottomrule
+    \end{tabular}
+  \end{minipage}
+  \end{center}
+}
+
+\begin{document}
+
+\papertitle{基于报童安全裕度与滚动修正的微网购电与储能调度模型}
+
+\abstractcn{%
+本文针对含光伏与储能的非孤岛式微网，在 10 分钟粒度上建立了“确定性线性规划 + 报童安全裕度 + 滚动修正”的统一调控框架，并用 2025 年 2 月至 12 月的全年数据完成因果回测。
+
+针对\textbf{问题一}，建立以全天购电费用最小为目标的确定性线性规划，约束包括功率平衡、储电量上下限、充放电功率上限以及 0:00 与 24:00 储电量相等（均为 $6000\,\mathrm{kWh}$）。求解得到全天购电量 $57580.98\,\mathrm{kWh}$、购电费 $33416.53$ 元；储能于 0:00--4:00 低价时段充电 $4500.00\,\mathrm{kWh}$，16:00--20:00 高价时段放电 $6740.13\,\mathrm{kWh}$ 顶负荷，白天光伏富余时段补充充电，全天无弃光。
+
+针对\textbf{问题二}，以决策时刻之前 7 天的历史均值作为负载与光伏的日前预测，并利用紧急购电价为正常电价 5 倍这一非对称代价，把计划购电量加上预测误差分布的 $q$ 分位点作为安全裕度。由报童模型，边际成本相等给出 $P(e_t>y_t)=1/5$，即最优分位点 $q=0.8$；实测全年费用曲线的最低点恰在 $q=0.80$，比不加裕度节省 $693$ 万元（$29\%$）。2025 年 2 月 1 日至 12 月 31 日计划购电 $2436.83$ 万 $\mathrm{kWh}$、紧急购电 $34.38$ 万 $\mathrm{kWh}$（占负载 $0.929\%$），总购电费用 $1702.64$ 万元。
+
+针对\textbf{问题三}，将附件 3 的整点光伏预报按 $(\text{发布时刻}+h-1,\ \text{发布时刻}+h]$ 展开到 10 分钟区间，在 0:00 制定初始计划，并在 6:00、12:00、18:00 只重排尚未执行的时段。推导并采用对称的偏差结算式 $\sum p_t x_t^{\text{adj}}+0.5\sum p_t|x_t^{\text{adj}}-x_t^{\text{plan}}|$，它同时覆盖“增购按 1.5 倍、减购按 0.5 倍”两条规则。滚动方案总费用 $1760.56$ 万元，比只用 0:00 预报的 $1780.62$ 万元\textbf{净省 $20.06$ 万元}，紧急购电由 $36.67$ 万降至 $26.82$ 万 $\mathrm{kWh}$，结论是值得引入。
+
+针对\textbf{问题四}，以实时电价的 7 日均值制定计划、按实际电价结算。对应问题二的方案总费用 $1734.13$ 万元，对应问题三的方案 $1782.78$ 万元；波动电价相比固定电价多支出约 $31.5$ 万元，全部来自价格预测误差。
+
+全文所有方案的能量平衡等式最大残差不超过 $4.6\times10^{-12}\,\mathrm{kWh}$，储电量与充放电功率边界违反不超过 $3.6\times10^{-12}$，且每一天的日前决策都经过“不使用当日及以后信息”的断言校验。%
+}{%
+微网调度 \quad 储能优化 \quad 报童模型 \quad 滚动修正 \quad 线性规划%
+}
+
+\tocpage
+
+\input{sections/1_restatement}
+\input{sections/2_analysis}
+\input{sections/3_assumptions}
+\input{sections/4_symbols}
+\input{sections/5_problem1}
+\input{sections/6_problem2}
+\input{sections/7_problem3}
+\input{sections/8_problem4}
+\input{sections/9_sensitivity}
+\input{sections/10_evaluation}
+
+\newpage
+\referencescn
+\newpage
+\appendixcn
+
+\end{document}

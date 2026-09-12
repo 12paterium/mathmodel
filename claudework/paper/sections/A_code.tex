@@ -1,0 +1,160 @@
+% 附录 A：核心代码。只列模型最关键的三段：线性规划、安全裕度与滚动修正。
+% 完整工程见 code/ 目录。
+
+\subsection*{A.1\quad 统一线性规划求解器（\texttt{code/core.py}）}
+
+\begin{lstlisting}[language=Python]
+def solve_plan(load, pv, price, soc_start, soc_end=None,
+               soc_end_value=None, base_purchase=None):
+    """求解一组日前计划。
+    load / pv : 区间电量预测 kWh，长度 n
+    price     : 区间电价 元/kWh
+    soc_start : 决策时刻的储电量 kWh
+    soc_end   : 若给定，强制收尾储电量等于该值（问题1、日循环口径）
+    base_purchase : 若非 None，表示滚动调整，按 0.5*p*|x - base_purchase| 结算偏差
+    """
+    n = len(load)
+    if soc_end_value is None:
+        soc_end_value = float(np.mean(price))
+    adjusted = base_purchase is not None
+    x, c, d, s, w = 0, n, 2 * n, 3 * n, 4 * n
+    up, down = 5 * n, 6 * n
+    nvar = 5 * n + (2 * n if adjusted else 0)
+
+    # 目标：购电费 + 偏差违约费 + 终端电量残值
+    obj = np.zeros(nvar)
+    obj[x:x + n] = price
+    if adjusted:
+        obj[up:up + n] = 0.5 * price      # 增购按 1.5 倍、减购按 0.5 倍，
+        obj[down:down + n] = 0.5 * price  # 合并后就是 0.5*p*|x - base|
+    obj[c:c + n] = 1e-8                   # 微量惩罚，避免同价时解不唯一
+    obj[d:d + n] = 1e-8
+    obj[w:w + n] = 1e-9
+    obj[s + n - 1] = -soc_end_value
+
+    # 等式约束：功率平衡 + SOC 递推 (+ 调整量定义 + 收尾电量)
+    rows = 2 * n + (n if adjusted else 0) + (1 if soc_end is not None else 0)
+    A = lil_matrix((rows, nvar)); b = np.zeros(rows)
+    for t in range(n):
+        A[t, x + t] = 1.0; A[t, d + t] = 1.0
+        A[t, c + t] = -1.0; A[t, w + t] = -1.0
+        b[t] = load[t] - pv[t]
+        A[n + t, s + t] = 1.0
+        A[n + t, c + t] = -ETA_CHARGE          # 充电效率 0.9
+        A[n + t, d + t] = 1.0 / ETA_DISCHARGE  # 放电效率 1.0
+        if t == 0: b[n + t] = soc_start
+        else:      A[n + t, s + t - 1] = -1.0
+    if adjusted:
+        for t in range(n):
+            A[2 * n + t, x + t] = 1.0
+            A[2 * n + t, up + t] = -1.0
+            A[2 * n + t, down + t] = 1.0
+            b[2 * n + t] = base_purchase[t]
+    if soc_end is not None:
+        A[rows - 1, s + n - 1] = 1.0; b[rows - 1] = soc_end
+
+    bounds = ([(0.0, None)] * n            # 购电量非负（不允许售电）
+              + [(0.0, FLOW_MAX)] * n      # 充电功率上限 5000/6 kWh
+              + [(0.0, FLOW_MAX)] * n      # 放电功率上限 5000/6 kWh
+              + [(SOC_MIN, SOC_MAX)] * n   # 储电量 1200 ~ 10800 kWh
+              + [(0.0, None)] * n)         # 弃光量
+    if adjusted:
+        bounds += [(0.0, None)] * (2 * n)
+
+    res = linprog(obj, A_eq=A.tocsr(), b_eq=b, bounds=bounds, method="highs")
+    if not res.success:
+        raise RuntimeError(f"线性规划求解失败：{res.message}")
+    v = res.x
+    return Dispatch(purchase=v[x:x + n].copy(), charge=v[c:c + n].copy(),
+                    discharge=v[d:d + n].copy(), soc=v[s:s + n].copy(),
+                    curtail=v[w:w + n].copy(), cost=float(res.fun))
+\end{lstlisting}
+
+\subsection*{A.2\quad 因果预测与报童安全裕度（\texttt{code/forecast.py}）}
+
+\begin{lstlisting}[language=Python]
+def history_mean_forecast(series, day, window=7):
+    """第 day 天之前 window 天的平均值；第 0 天没有历史，退化为当天实际。"""
+    lo = max(0, day - window)
+    if lo == day:
+        return series[day].copy()
+    return series[lo:day].mean(axis=0)
+
+
+def safety_margin(ins, day, start=0, release_hour=None, window=28, quantile=0.8):
+    """区间 [start, 144) 上的安全裕度：历史预测误差的 0.8 分位点。
+
+    紧急购电价是正常价的 5 倍。多买 1 kWh 的边际成本是 p（买多了只能弃掉），
+    少买 1 kWh 的边际成本是 5p*P(缺电)，两者相等时 P(缺电) = 1/5，
+    所以最优裕度恰好是误差分布的 0.8 分位点——标准的报童模型结论。
+    """
+    lo = max(1, day - window)
+    if lo >= day:
+        return np.zeros(len(ins.load[day]) - start)
+    errors = np.array([forecast_error(ins, d, start, release_hour)
+                       for d in range(lo, day)])
+    return np.maximum(np.quantile(errors, quantile, axis=0), 0.0)
+
+
+def forecast_error(ins, day, start=0, release_hour=None):
+    """逐区间预测误差 e = 负载误差 - 光伏误差；e>0 表示当天会缺电。"""
+    fc_load = history_mean_forecast(ins.load, day)[start:]
+    fc_pv = (history_mean_forecast(ins.pv, day)[start:] if release_hour is None
+             else pv_forecast_after(ins, day, release_hour))
+    return (ins.load[day, start:] - fc_load) - (ins.pv[day, start:] - fc_pv)
+\end{lstlisting}
+
+\subsection*{A.3\quad 问题三的滚动修正主循环（\texttt{code/p3.py}）}
+
+\begin{lstlisting}[language=Python]
+def run_problem3(ins, releases=RELEASE_HOURS):
+    """滚动求解问题3。releases 可以只给 (0,)，用来做“不滚动”的对照。"""
+    records = []
+    soc = SOC_INIT
+    for day in range(len(ins.dates)):
+        fc_load = history_mean_forecast(ins.load, day)
+        price = ins.a1_price
+
+        # ---- 0:00 初始计划 ----
+        base = solve_plan(fc_load, pv_forecast_after(ins, day, 0), price,
+                          soc_start=soc, soc_end=soc)
+        base_purchase = base.purchase + safety_margin(ins, day, 0, 0)
+        purchase = base_purchase.copy()
+        charge, discharge = base.charge.copy(), base.discharge.copy()
+
+        # ---- 后续预报时刻的滚动调整：只重排该时刻之后的区间 ----
+        for hour in releases[1:]:
+            start = hour * 6
+            soc_now = roll_soc(charge[:start], discharge[:start], soc)[-1]
+            sub = solve_plan(fc_load[start:], pv_forecast_after(ins, day, hour),
+                             price[start:], soc_start=soc_now, soc_end=soc,
+                             base_purchase=base_purchase[start:])
+            purchase[start:] = sub.purchase + safety_margin(ins, day, start, hour)
+            charge[start:] = sub.charge
+            discharge[start:] = sub.discharge
+
+        soc_track = roll_soc(charge, discharge, soc)
+        real = settle(ins.load[day], ins.pv[day], price, purchase, charge, discharge,
+                      purchase_plan=base_purchase)
+        records.append(dict(day=day, base=base, base_purchase=base_purchase,
+                            purchase=purchase, charge=charge, discharge=discharge,
+                            soc_start=soc, soc_end=soc_track[-1],
+                            soc_track=soc_track, real=real))
+        soc = soc_track[-1]
+    return records
+\end{lstlisting}
+
+\subsection*{A.4\quad 附件 3 的时间对齐（\texttt{code/forecast.py}）}
+
+\begin{lstlisting}[language=Python]
+def pv_forecast_after(ins, day, release_hour):
+    """第 release_hour 时发布的预报，对应 release_hour 之后各 10 分钟区间的预测电量。
+
+    附件3 的“预报h小时”指发布时刻起第 h 个小时，即区间 (T+h-1, T+h]，
+    所以发布时刻 6:00 的“预报1小时”正好是当天 6:00-7:00，即第 36 个十分钟区间。
+    一天只关心到 24:00，因此取前 (24 - release_hour) 个小时即可。
+    """
+    index = RELEASE_HOURS.index(release_hour)
+    hours = ins.pv_fc[day, index][: 24 - release_hour]
+    return np.repeat(hours, 6)
+\end{lstlisting}
