@@ -43,7 +43,7 @@ xelatex main.tex && xelatex main.tex
 | `results/summary.json` | 存在 | 各问费用汇总 |
 | `reports/RESULTS_REPORT.md` | 存在 | 模型、结果、校验、可改进方向 |
 | `figures/*.pdf` | 存在 | 6 张矢量图 |
-| `paper/main.pdf` | 存在 | 27 页，两次编译无未定义引用 |
+| `paper/main.pdf` | 存在 | 26 页，两次编译无未定义引用 |
 | `paper/main.tex` + `paper/sections/` | 存在 | 11 个章节文件 + 参考文献 + 代码附录 |
 
 ## 四、结果文件回读核对
